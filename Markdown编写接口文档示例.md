@@ -8,30 +8,9 @@
 HTTPS协议
 
 ### 1.2 请求方法
-所有接口只支持POST方法发起请求。
+POST
 
-### 1.3 字符编码
-HTTP通讯及报文BASE64编码均采用UTF-8字符集编码格式。
-
-### 1.4 格式说明
-元素出现要求说明：
-
-符号				|说明
-:----:			|:---
-R				|报文中该元素必须出现（Required）
-O				|报文中该元素可选出现（Optional）
-C				|报文中该元素在一定条件下出现（Conditional）
-
-### 1.5 报文规范说明
-
-1. 报文规范仅针对交易请求数据进行描述；  
-
-2. 报文规范中请求报文的内容为Https请求报文中RequestData值的明文内容；
-
-3. 报文规范分为请求报文和响应报文。请求报文描述由发起方，响应报文由报文接收方响应。
-
-### 1.6 请求报文结构
-接口只接收两个参数 **RequestData** 和 **SignData** ，其中RequestData的值为请求内容，SignData的值为签名内容。
+### 1.3 URL地址
 
 #### 1.6.1 参数说明
 **RequestData（请求内容）：** 其明文为每次请求的具体参数，采用 JSON 格式，依次经过 DES 加密（以UTF-8编码、BASE64编码输出结果）和 URLEncode 后，作为 RequestData 的值。  
@@ -57,105 +36,6 @@ Token				|string		|R			|用户登录后token，没有登录则为空字符串
 Version				|string		|R			|接口版本号
 SystemId			|int		|R			|机构号，请求的系统Id
 Timestamp			|long		|R			|当前UNIX时间戳
-
-
-#### 1.6.3 校验流程：
-服务端接收到请求后首先对RequestData进行DES解密出JSON字符串，然后对JSON字符串进行MD5加密，加密后的值与请求中的SignData值进行对比，如对比通过，视为合法请求，否则视为非法请求。
-
-**DES加密/解密函数示例：**
-
-C#版：
-
-```
-/// <summary>
-/// 进行DES加密。
-/// </summary>
-/// <param name="decryptString">要加密的字符串。</param>
-/// <param name="secretKey">密钥，且必须为8位。</param>
-/// <returns>以Base64格式返回的加密字符串。</returns>
-public static string DesEncrypt(string decryptString, string secretKey)
-{
-    using (DESCryptoServiceProvider des = new DESCryptoServiceProvider())
-    {
-        byte[] inputByteArray = Encoding.UTF8.GetBytes(decryptString);
-        des.Key = Encoding.ASCII.GetBytes(secretKey);
-        des.IV = Encoding.ASCII.GetBytes(secretKey);
-        MemoryStream ms = new MemoryStream();
-        using (CryptoStream cs = new CryptoStream(ms, des.CreateEncryptor(), CryptoStreamMode.Write))
-        {
-            cs.Write(inputByteArray, 0, inputByteArray.Length);
-            cs.FlushFinalBlock();
-            cs.Close();
-        }
-        string str = Convert.ToBase64String(ms.ToArray());
-        ms.Close();
-        return str;
-    }
-}
-
-/// <summary>
-/// 进行DES解密。
-/// </summary>
-/// <param name="encryptedString">要解密的以Base64</param>
-/// <param name="secretKey">密钥，且必须为8位。</param>
-/// <returns>已解密的字符串。</returns>
-public static string DesDecrypt(string encryptedString, string secretKey)
-{
-    byte[] inputByteArray = Convert.FromBase64String(encryptedString);
-    using (DESCryptoServiceProvider des = new DESCryptoServiceProvider())
-    {
-        des.Key = Encoding.ASCII.GetBytes(secretKey);
-        des.IV = Encoding.ASCII.GetBytes(secretKey);
-        MemoryStream ms = new MemoryStream();
-        using (CryptoStream cs = new CryptoStream(ms, des.CreateDecryptor(), CryptoStreamMode.Write))
-        {
-            cs.Write(inputByteArray, 0, inputByteArray.Length);
-            cs.FlushFinalBlock();
-            cs.Close();
-        }
-        string str = Encoding.UTF8.GetString(ms.ToArray());
-        ms.Close();
-        return str;
-    }
-}
-```
-
-JAVA版：
-
-```
-/* DES解密 */
-public static String decrypt(String message, String key) throws Exception {
-
-    byte[] bytesrc = Base64.decode(message);
-    //convertHexString(message);
-    Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
-    DESKeySpec desKeySpec = new DESKeySpec(key.getBytes("UTF-8"));
-    SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
-    SecretKey secretKey = keyFactory.generateSecret(desKeySpec);
-    IvParameterSpec iv = new IvParameterSpec(key.getBytes("UTF-8"));
-    cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
-    byte[] retByte = cipher.doFinal(bytesrc);
-    return new String(retByte);
-}
-
-
-/* DES加密 */
-public static byte[] encrypt(String message, String key) throws Exception {
-    Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
-    DESKeySpec desKeySpec = new DESKeySpec(key.getBytes("UTF-8"));
-    SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
-    SecretKey secretKey = keyFactory.generateSecret(desKeySpec);
-    IvParameterSpec iv = new IvParameterSpec(key.getBytes("UTF-8"));
-    cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
-    return cipher.doFinal(message.getBytes("UTF-8"));
-}
-```
-
-#### 1.6.4 DES密钥
-
-测试环境：az2ih1uY
-
-生产环境：另外提供。
 
 #### 1.6.5 请求报文示例
 请求内容明文：
@@ -348,16 +228,3 @@ Data						|object		|R			|&nbsp;
 303		|参数不正确
 500		|系统内部错误
 999		|处理失败
-
-
-## 4 附录B 币种
-
-币种		|说明  
-:----	|:---
-RMB		|人民币
-HKD		|港币
-JPY		|日元
-TWD		|新台币
-USD		|美元
-VND		|越南盾
-THB		|泰铢
